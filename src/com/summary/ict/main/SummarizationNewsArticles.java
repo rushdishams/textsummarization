@@ -1,16 +1,16 @@
 package com.summary.ict.main;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.io.FileUtils;
 
 import com.boundary.sentence.TextContent;
 
@@ -21,13 +21,18 @@ import net.sf.classifier4J.summariser.SimpleSummariser;
  * The class to instantiate Simple Summariser object. Simple Summariser can be
  * found in Classify4j project.
  * 
- * It takes all articles in String format separated by a delimiter and generates
- * x% summary for the articles in the same order separated by the same
- * delimiter. The x is supplied by the user from the console.
+ * It takes an input file and output file and generates
+ * x% summary for the articles in the same order. The x is supplied by the user from the console.
+ * The input file has each article content within <article>..</article> tags. The output file
+ * will contain summaries for the correspoinding articles in <summary>..</summary> tags. 
  * 
  * 
  * @author Rushdi Shams
- * @version 0.1.0 December 18, 2015.
+ * @version 0.2.0 December 22, 2015.
+ * 
+ * Change:
+ * Instead of strings sent to it as a CMD line argument, the tool now reads articles from an input file.
+ * Instead of throwing the summaries to the console, the tool now records them in a text file.  
  *
  */
 public class SummarizationNewsArticles {
@@ -85,22 +90,34 @@ public class SummarizationNewsArticles {
 														// unicode
 		return sentence;
 	}// end method
+	
+	public static void writeSummaries(String outputFile, String content){
+		try {
+			FileUtils.write(new File(outputFile), content);
+		} catch (IOException e) {
+			System.out.println("Cannot write summaries");
+		}
+	}
 
 
 	public static void main(String[] args) {
 
 		Instant start = Instant.now();
 
-		String articlesFromInput = args[0];
+		String articlesFromInput = "";
+		try {
+			articlesFromInput = FileUtils.readFileToString(new File(args[0]));
+		} catch (IOException e) {
+			System.out.println("Cannot parse input file");
+		}
 		articlesFromInput = removeGarbage(articlesFromInput);
-		float summarySize = Float.parseFloat(args[1]);
+		float summarySize = Float.parseFloat(args[2]);
 		List<String> articleContents = new ArrayList<String>(); 
 				articleContents = getTagValues(articlesFromInput);
 
 		String aggregatedSummaries = "";
 
 
-		int i = 1;
 		for (String article : articleContents) {
 
 			if (article.length() == 0) {
@@ -118,12 +135,11 @@ public class SummarizationNewsArticles {
 
 			aggregatedSummaries += "<summary>" + summary + "</summary>" + "\n";
 
-			i++;
-
 		}
 
+		writeSummaries(args[1], aggregatedSummaries);
 		Instant end = Instant.now();
-		System.out.println(aggregatedSummaries);
+		System.out.println(Duration.between(start, end));
 	}
 
 }// end class
