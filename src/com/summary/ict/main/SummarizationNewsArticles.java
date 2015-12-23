@@ -28,11 +28,10 @@ import net.sf.classifier4J.summariser.SimpleSummariser;
  * 
  * 
  * @author Rushdi Shams
- * @version 0.2.0 December 22, 2015.
+ * @version 0.3.0 December 23, 2015.
  * 
  * Change:
- * Instead of strings sent to it as a CMD line argument, the tool now reads articles from an input file.
- * Instead of throwing the summaries to the console, the tool now records them in a text file.  
+ * Handles articles with 0 and 1 sentence. 
  *
  */
 public class SummarizationNewsArticles {
@@ -120,14 +119,18 @@ public class SummarizationNewsArticles {
 
 		for (String article : articleContents) {
 
-			if (article.length() == 0) {
-				continue;
-			}
-
 			TextContent t = new TextContent(); // creating TextContent object
 			t.setText(article);
 			t.setSentenceBoundary();
 			String[] content = t.getSentence();
+			if(content.length == 0){
+				aggregatedSummaries += "<summary>" + "" + "</summary>" + "\n";
+				continue;
+			}
+			if(content.length == 1){
+				aggregatedSummaries += "<summary>" + content[0] + "</summary>" + "\n";
+				continue;
+			}
 
 			int articleSummaryLength = Math.round((float) content.length * summarySize);
 
