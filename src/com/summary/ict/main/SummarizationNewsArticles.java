@@ -28,10 +28,11 @@ import net.sf.classifier4J.summariser.SimpleSummariser;
  * 
  * 
  * @author Rushdi Shams
- * @version 0.3.0 December 23, 2015.
+ * @version 0.4.0 January 19, 2016.
  * 
  * Change:
- * Handles articles with 0 and 1 sentence. 
+ * Prints article number currently being processed.
+ * Exception message in case summary is not produced. 
  *
  */
 public class SummarizationNewsArticles {
@@ -68,7 +69,7 @@ public class SummarizationNewsArticles {
 		try {
 			summaryText = summarizer.summarise(originalText, summarySize);
 		} catch (NoSuchElementException e) {
-			e.printStackTrace();
+			System.out.println("Error while summarizing");
 		}
 		return summaryText;
 	}// end method
@@ -116,19 +117,22 @@ public class SummarizationNewsArticles {
 
 		String aggregatedSummaries = "";
 
-
+		int articleNumber = 1;
 		for (String article : articleContents) {
 
+			System.out.println("Processing article " + articleNumber + "/" + articleContents.size());
 			TextContent t = new TextContent(); // creating TextContent object
 			t.setText(article);
 			t.setSentenceBoundary();
 			String[] content = t.getSentence();
 			if(content.length == 0){
 				aggregatedSummaries += "<summary>" + "" + "</summary>" + "\n";
+				articleNumber++;
 				continue;
 			}
 			if(content.length == 1){
 				aggregatedSummaries += "<summary>" + content[0] + "</summary>" + "\n";
+				articleNumber++;
 				continue;
 			}
 
@@ -137,6 +141,7 @@ public class SummarizationNewsArticles {
 			String summary = summarize(article, articleSummaryLength).trim();
 
 			aggregatedSummaries += "<summary>" + summary + "</summary>" + "\n";
+			articleNumber++;
 
 		}
 
