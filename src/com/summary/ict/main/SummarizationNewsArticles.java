@@ -31,8 +31,7 @@ import net.sf.classifier4J.summariser.SimpleSummariser;
  * @version 0.4.0 January 19, 2016.
  * 
  * Change:
- * Prints article number currently being processed.
- * Exception message in case summary is not produced. 
+ * StringBuilder is used whenever strings are concatenated. 
  *
  */
 public class SummarizationNewsArticles {
@@ -112,26 +111,25 @@ public class SummarizationNewsArticles {
 		}
 		articlesFromInput = removeGarbage(articlesFromInput);
 		float summarySize = Float.parseFloat(args[2]);
-		List<String> articleContents = new ArrayList<String>(); 
-				articleContents = getTagValues(articlesFromInput);
+		List<String> articleContents = getTagValues(articlesFromInput);
 
-		String aggregatedSummaries = "";
+		StringBuilder aggregatedSummaries = new StringBuilder();
 
 		int articleNumber = 1;
+		TextContent t = new TextContent(); // creating TextContent object
 		for (String article : articleContents) {
 
 			System.out.println("Processing article " + articleNumber + "/" + articleContents.size());
-			TextContent t = new TextContent(); // creating TextContent object
 			t.setText(article);
 			t.setSentenceBoundary();
 			String[] content = t.getSentence();
 			if(content.length == 0){
-				aggregatedSummaries += "<summary>" + "" + "</summary>" + "\n";
+				aggregatedSummaries.append("<summary>" + "" + "</summary>" + "\n");
 				articleNumber++;
 				continue;
 			}
 			if(content.length == 1){
-				aggregatedSummaries += "<summary>" + content[0] + "</summary>" + "\n";
+				aggregatedSummaries.append("<summary>" + content[0] + "</summary>" + "\n");
 				articleNumber++;
 				continue;
 			}
@@ -140,12 +138,11 @@ public class SummarizationNewsArticles {
 
 			String summary = summarize(article, articleSummaryLength).trim();
 
-			aggregatedSummaries += "<summary>" + summary + "</summary>" + "\n";
+			aggregatedSummaries.append("<summary>" + summary + "</summary>" + "\n");
 			articleNumber++;
-
 		}
 
-		writeSummaries(args[1], aggregatedSummaries);
+		writeSummaries(args[1], aggregatedSummaries.toString());
 		Instant end = Instant.now();
 		System.out.println(Duration.between(start, end));
 	}
