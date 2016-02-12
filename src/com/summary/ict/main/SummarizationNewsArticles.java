@@ -4,13 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.boundary.sentence.TextContent;
 
@@ -21,17 +20,19 @@ import net.sf.classifier4J.summariser.SimpleSummariser;
  * The class to instantiate Simple Summariser object. Simple Summariser can be
  * found in Classify4j project.
  * 
- * It takes an input file and output file and generates
- * x% summary for the articles in the same order. The x is supplied by the user from the console.
- * The input file has each article content within <article>..</article> tags. The output file
- * will contain summaries for the correspoinding articles in <summary>..</summary> tags. 
+ * It takes an input file and output file and generates x% summary for the
+ * articles in the same order. The x is supplied by the user from the console.
+ * The input file has each article content within <article>..</article> tags.
+ * The output file will contain summaries for the correspoinding articles in
+ * <summary>..</summary> tags.
  * 
  * 
  * @author Rushdi Shams
- * @version 0.4.0 January 19, 2016.
+ * @version 0.6.0 February 12, 2016.
  * 
- * Change:
- * StringBuilder is used whenever strings are concatenated. 
+ *          Change: + garbage removal for each article rather than the entire
+ *          input file + summary recorded on the fly rather than after the
+ *          execution of the jar file
  *
  */
 public class SummarizationNewsArticles {
@@ -40,19 +41,9 @@ public class SummarizationNewsArticles {
 	// --------------------------------------------------------------------------------
 	private static String summaryText;
 	private static ISummariser summarizer;
-	private static final Pattern TAG_REGEX = Pattern.compile("<article>(.+?)</article>");
 	// --------------------------------------------------------------------------------
 	// Methods
 	// --------------------------------------------------------------------------------
-
-	private static List<String> getTagValues(final String str) {
-	    final List<String> tagValues = new ArrayList<String>();
-	    final Matcher matcher = TAG_REGEX.matcher(str);
-	    while (matcher.find()) {
-	        tagValues.add(matcher.group(1));
-	    }
-	    return tagValues;
-	}
 
 	/**
 	 * Method to summarize a given string
@@ -74,77 +65,106 @@ public class SummarizationNewsArticles {
 	}// end method
 
 	public static String removeGarbage(String sentence) {
-		sentence = sentence.replaceAll("[^\\p{ASCII}]", ""); // Strips off non-ascii
-													// characters
-		sentence = sentence.replaceAll("\\s+", " ");
-		sentence = sentence.replaceAll("\\p{Cntrl}", ""); // Strips off ascii
-															// control
-															// characters
-		sentence = sentence.replaceAll("[^\\p{Print}]", ""); // Strips off ascii
-																// non-printable
-																// characters
-		sentence = sentence.replaceAll("\\p{C}", ""); // Strips off
-														// non-printable
-														// characters from
+		StringUtils.replace(sentence, "[^\\p{ASCII}]", ""); // non-ASCII
+		StringUtils.replace(sentence, "\\s+", " "); // recurring whitespace
+		StringUtils.replace(sentence, "\\p{Cntrl}", "");// Control
+		StringUtils.replace(sentence, "[^\\p{Print}]", ""); // Non-printable
+		StringUtils.replace(sentence, "\\p{C}", ""); // non-printable for
 														// unicode
+
 		return sentence;
 	}// end method
-	
-	public static void writeSummaries(String outputFile, String content){
+
+	/**
+	 * Method to record the summaries in output file
+	 * 
+	 * @param outputFile
+	 * @param content
+	 */
+	public static void writeSummaries(String outputFile, String content) {
 		try {
-			FileUtils.write(new File(outputFile), content);
+			FileUtils.write(new File(outputFile), content, "UTF-8", true);
 		} catch (IOException e) {
 			System.out.println("Cannot write summaries");
 		}
 	}
 
-
+	/**
+	 * Driver method
+	 * 
+	 * @param args
+	 *            input file, output file, summary size
+	 */
 	public static void main(String[] args) {
 
 		Instant start = Instant.now();
 
 		String articlesFromInput = "";
+		System.out.println("-- Reading Input File --");
 		try {
-			articlesFromInput = FileUtils.readFileToString(new File(args[0]));
+			articlesFromInput = FileUtils.readFileToString(new File(args[0]), "UTF-8");
 		} catch (IOException e) {
-			System.out.println("Cannot parse input file");
+			System.out.println("-- Cannot parse input file --");
 		}
-		articlesFromInput = removeGarbage(articlesFromInput);
+		System.out.println("-- Done Reading Input File --");
+
 		float summarySize = Float.parseFloat(args[2]);
-		List<String> articleContents = getTagValues(articlesFromInput);
+		String[] tagContents = StringUtils.substringsBetween(articlesFromInput, "<article>", "</article");
 
-		StringBuilder aggregatedSummaries = new StringBuilder();
+		List<String> articleContents = Arrays.asList(tagContents);
 
+		// StringBuilder aggregatedSummaries = new StringBuilder();
+		System.out.println("-- Let's Process the Articles --");
 		int articleNumber = 1;
-		TextContent t = new TextContent(); // creating TextContent object
 		for (String article : articleContents) {
 
+			article = removeGarbage(article); // remove garbage for current
+												// article
 			System.out.println("Processing article " + articleNumber + "/" + articleContents.size());
+
+			/* Getting sentences from the current article */
+			TextContent t = new TextContent();
 			t.setText(article);
 			t.setSentenceBoundary();
-			String[] content = t.getSentence();
-			if(content.length == 0){
-				aggregatedSummaries.append("<summary>" + "" + "</summary>" + "\n");
+
+			String[] content = t.getSentence();// content has the sentences
+
+			/*
+			 * In case there is no sentence in the article, write empty string
+			 * in the output file
+			 */
+			if (content.length == 0) {
+				// aggregatedSummaries.append("<summary>" + "" + "</summary>" +
+				// "\n");
 				articleNumber++;
+				writeSummaries(args[1], "<summary>" + "" + "</summary>" + "\n");
 				continue;
 			}
-			if(content.length == 1){
-				aggregatedSummaries.append("<summary>" + content[0] + "</summary>" + "\n");
+			/*
+			 * In case there is one sentence in the article, write write that
+			 * sentence in the output file
+			 */
+			if (content.length == 1) {
+				// aggregatedSummaries.append("<summary>" + content[0] +
+				// "</summary>" + "\n");
 				articleNumber++;
+				writeSummaries(args[1], "<summary>" + content[0] + "</summary>" + "\n");
 				continue;
 			}
 
+			/* Generating summaries using Classifier4j */
 			int articleSummaryLength = Math.round((float) content.length * summarySize);
-
 			String summary = summarize(article, articleSummaryLength).trim();
 
-			aggregatedSummaries.append("<summary>" + summary + "</summary>" + "\n");
+			// aggregatedSummaries.append("<summary>" + summary + "</summary>" +
+			// "\n");
+			writeSummaries(args[1], "<summary>" + summary + "</summary>" + "\n"); 
 			articleNumber++;
-		}
+		} // let's move to the second article
 
-		writeSummaries(args[1], aggregatedSummaries.toString());
+		// writeSummaries(args[1], aggregatedSummaries.toString());
 		Instant end = Instant.now();
 		System.out.println(Duration.between(start, end));
-	}
+	}// end driver method
 
 }// end class
