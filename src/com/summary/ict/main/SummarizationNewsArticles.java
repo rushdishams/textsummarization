@@ -28,9 +28,9 @@ import net.sf.classifier4J.summariser.SimpleSummariser;
  * 
  * 
  * @author Rushdi Shams
- * @version 0.7.0 February 12, 2016.
+ * @version 0.8.0 February 12, 2016.
  * 
- *          Change: + summaries recorded in the end of the software lifecycle
+ *          Change: + 0.6.0 version except garbage removal--there is no garbage removal at all
  *
  */
 public class SummarizationNewsArticles {
@@ -111,13 +111,13 @@ public class SummarizationNewsArticles {
 
 		List<String> articleContents = Arrays.asList(tagContents);
 
-		StringBuilder aggregatedSummaries = new StringBuilder();
+		// StringBuilder aggregatedSummaries = new StringBuilder();
 		System.out.println("-- Let's Process the Articles --");
 		int articleNumber = 1;
 		for (String article : articleContents) {
 
-			article = removeGarbage(article); // remove garbage for current
-												// article
+//			article = removeGarbage(article); // remove garbage for current
+//												// article
 			System.out.println("Processing article " + articleNumber + "/" + articleContents.size());
 
 			/* Getting sentences from the current article */
@@ -132,10 +132,10 @@ public class SummarizationNewsArticles {
 			 * in the output file
 			 */
 			if (content.length == 0) {
-				 aggregatedSummaries.append("<summary>" + "" + "</summary>" +
-				 "\n");
+				// aggregatedSummaries.append("<summary>" + "" + "</summary>" +
+				// "\n");
 				articleNumber++;
-//				writeSummaries(args[1], "<summary>" + "" + "</summary>" + "\n");
+				writeSummaries(args[1], "<summary>" + "" + "</summary>" + "\n");
 				continue;
 			}
 			/*
@@ -143,10 +143,10 @@ public class SummarizationNewsArticles {
 			 * sentence in the output file
 			 */
 			if (content.length == 1) {
-				 aggregatedSummaries.append("<summary>" + content[0] +
-				 "</summary>" + "\n");
+				// aggregatedSummaries.append("<summary>" + content[0] +
+				// "</summary>" + "\n");
 				articleNumber++;
-//				writeSummaries(args[1], "<summary>" + content[0] + "</summary>" + "\n");
+				writeSummaries(args[1], "<summary>" + content[0] + "</summary>" + "\n");
 				continue;
 			}
 
@@ -154,13 +154,13 @@ public class SummarizationNewsArticles {
 			int articleSummaryLength = Math.round((float) content.length * summarySize);
 			String summary = summarize(article, articleSummaryLength).trim();
 
-			 aggregatedSummaries.append("<summary>" + summary + "</summary>" +
-			 "\n");
-//			writeSummaries(args[1], "<summary>" + summary + "</summary>" + "\n"); 
+			// aggregatedSummaries.append("<summary>" + summary + "</summary>" +
+			// "\n");
+			writeSummaries(args[1], "<summary>" + summary + "</summary>" + "\n"); 
 			articleNumber++;
 		} // let's move to the second article
 
-		 writeSummaries(args[1], aggregatedSummaries.toString());
+		// writeSummaries(args[1], aggregatedSummaries.toString());
 		Instant end = Instant.now();
 		System.out.println(Duration.between(start, end));
 	}// end driver method
